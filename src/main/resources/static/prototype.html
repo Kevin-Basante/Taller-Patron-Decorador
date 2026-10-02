@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HorseCare · Care plan templates</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="prototype.css">
+</head>
+<body>
+    <main class="container">
+        <header>
+            <h1>🐎 HorseCare</h1>
+            <p>Care plan templates · Prototype pattern</p>
+            <a class="back-link" href="index.html">← Back to services</a>
+        </header>
+
+        <section class="card">
+            <h2>1. Choose a template</h2>
+            <div id="templates" class="template-grid"></div>
+        </section>
+
+        <section class="card">
+            <h2>2. Customize the clone</h2>
+
+            <label for="horseName">Horse name</label>
+            <input id="horseName" type="text" placeholder="E.g. Thunder">
+
+            <div class="field-row">
+                <div>
+                    <label for="ageYears">Age (years)</label>
+                    <input id="ageYears" type="number" min="0" max="40">
+                </div>
+                <div>
+                    <label for="weightKg">Weight (kg)</label>
+                    <input id="weightKg" type="number" min="20" max="1200">
+                </div>
+            </div>
+
+            <h3>Extra services</h3>
+            <div id="extras"></div>
+
+            <button id="clonePlan">Clone template</button>
+        </section>
+
+        <section id="comparison" class="comparison hidden">
+            <article class="card">
+                <h2>Cloned plan</h2>
+                <div id="clonedPlan"></div>
+            </article>
+            <article class="card original">
+                <h2>Original template</h2>
+                <div id="originalTemplate"></div>
+                <p class="note">The template keeps its original values after cloning.</p>
+            </article>
+        </section>
+    </main>
+
+    <script src="prototype.js"></script>
+</body>
+</html>
