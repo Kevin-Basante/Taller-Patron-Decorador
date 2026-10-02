@@ -32,7 +32,8 @@ header h1 {
     box-shadow: 0 5px 18px rgba(0,0,0,.08);
 }
 
-input[type="text"] {
+input[type="text"],
+select {
     width: 100%;
     padding: 12px;
     margin: 8px 0 20px;
@@ -58,6 +59,8 @@ button {
     cursor: pointer;
     font-size: 16px;
     font-weight: bold;
+    background: #8a5a2b;
+    color: white;
 }
 
 .result {
@@ -72,7 +75,93 @@ button {
     display: none;
 }
 
+label {
+    font-weight: bold;
+}
+
+select {
+    background: white;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.hint {
+    display: block;
+    color: #7a6a5d;
+    font-size: 13px;
+}
+
+button:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+.patterns {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+
+.pill.factory { background: #2f6f8f; }
+.pill.builder { background: #8a5a2b; }
+.pill.decorator { background: #6b4c9a; }
+
+.package-note {
+    background: #f4efe7;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.error {
+    background: #fde8e4;
+    color: #8a2316;
+    padding: 10px 12px;
+    border-radius: 8px;
+}
+
+.recommendations,
+.trace {
+    text-align: left;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.trace ol {
+    padding-left: 20px;
+    line-height: 2;
+}
+
+.trace code {
+    background: #f4efe7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    word-break: break-word;
+}
+
 @media (max-width: 600px) {
+    .row {
+        grid-template-columns: 1fr;
+    }
+
     .service {
         grid-template-columns: 25px 1fr;
     }

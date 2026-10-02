@@ -10,47 +10,89 @@
     <main class="container">
         <header>
             <h1>🐎 HorseCare</h1>
-            <p>Personaliza el cuidado de tu caballo</p>
+            <p>Arma el plan de cuidado de tu caballo</p>
+            <div class="patterns">
+                <span class="pill factory">Factory Method</span>
+                <span class="pill builder">Builder</span>
+                <span class="pill decorator">Decorator</span>
+            </div>
         </header>
 
         <section class="card">
             <label for="horse">Nombre del caballo</label>
-            <input id="horse" type="text" placeholder="Ej. Thunder">
+            <input id="horse" type="text" maxlength="40" placeholder="Ej. Thunder">
 
-            <h2>Servicios adicionales</h2>
+            <div class="row">
+                <div>
+                    <label for="horseType">Tipo de caballo</label>
+                    <select id="horseType"></select>
+                    <small class="hint">Define el cuidado base (<b>Factory Method</b>).</small>
+                </div>
+                <div>
+                    <label for="carePackage">Paquete</label>
+                    <select id="carePackage"></select>
+                    <small class="hint">Define cómo se arma el plan (<b>Builder</b>).</small>
+                </div>
+            </div>
 
-            <label class="service">
-                <input type="checkbox" id="premiumFood">
-                <span>🥕 Alimentación premium</span>
-                <strong>$30.000</strong>
-            </label>
+            <div id="extras">
+                <h2>Servicios adicionales</h2>
+                <small class="hint">Cada servicio envuelve al anterior (<b>Decorator</b>).</small>
 
-            <label class="service">
-                <input type="checkbox" id="bath">
-                <span>🛁 Baño y aseo</span>
-                <strong>$20.000</strong>
-            </label>
+                <label class="service">
+                    <input type="checkbox" id="premiumFood">
+                    <span>🥕 Alimentación premium</span>
+                    <strong>$30.000</strong>
+                </label>
 
-            <label class="service">
-                <input type="checkbox" id="training">
-                <span>🏇 Entrenamiento</span>
-                <strong>$50.000</strong>
-            </label>
+                <label class="service">
+                    <input type="checkbox" id="bath">
+                    <span>🛁 Baño y aseo</span>
+                    <strong>$20.000</strong>
+                </label>
 
-            <label class="service">
-                <input type="checkbox" id="veterinary">
-                <span>🩺 Chequeo veterinario</span>
-                <strong>$40.000</strong>
-            </label>
+                <label class="service">
+                    <input type="checkbox" id="training">
+                    <span>🏇 Entrenamiento</span>
+                    <strong>$50.000</strong>
+                </label>
 
-            <button id="calculate">Calcular servicio</button>
+                <label class="service">
+                    <input type="checkbox" id="veterinary">
+                    <span>🩺 Chequeo veterinario</span>
+                    <strong>$40.000</strong>
+                </label>
+            </div>
+
+            <p id="packageNote" class="package-note hidden">
+                Este paquete ya trae sus servicios definidos. Elige <b>Personalizado</b> para escogerlos tú.
+            </p>
+
+            <p id="error" class="error hidden" role="alert"></p>
+
+            <button id="calculate">Crear plan de cuidado</button>
         </section>
 
         <section id="result" class="card result hidden">
-            <h2>Resumen</h2>
-            <p><b>Caballo:</b> <span id="horseName">-</span></p>
+            <h2>Plan de cuidado</h2>
+            <p><b>Caballo:</b> <span id="horseName">-</span> · <span id="resultType">-</span></p>
+            <p><b>Paquete:</b> <span id="resultPackage">-</span> · <span id="sessions">-</span></p>
             <p id="description"></p>
             <h2 id="total">$0</h2>
+
+            <div id="recommendationsBox" class="recommendations">
+                <h3>Recomendaciones</h3>
+                <ul id="recommendations"></ul>
+            </div>
+
+            <div class="trace">
+                <h3>¿Cómo se construyó este plan?</h3>
+                <ol>
+                    <li><span class="pill factory">Factory Method</span> <code id="traceCreator"></code> creó <code id="traceBaseCare"></code></li>
+                    <li><span class="pill builder">Builder</span> <code>CarePlanDirector</code> dirigió a <code id="traceBuilder"></code></li>
+                    <li><span class="pill decorator">Decorator</span> <span id="traceDecorators"></span></li>
+                </ol>
+            </div>
         </section>
     </main>
 
