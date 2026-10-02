@@ -264,3 +264,158 @@ On the free plan the service sleeps after 15 minutes without traffic; the next v
 
 - **Original project (Decorator):** course team that created HorseCare.
 - **Factory Method, Builder and deployment:** Kevin Basante and Arley Riascos.
+
+---
+
+## 🧬 Prototype Pattern — Care plan templates
+
+**Author:** Arley Riascos
+
+### Problem
+
+A stable does not build a care plan from scratch for every horse that arrives. A complete plan has a lot of data: age, weight, feeding schedule, vaccinations, extra services and special care. Most horses of the same kind (racehorses, senior horses, foals) need almost the same plan, with only a few changes.
+
+### Solution
+
+The stable keeps one **template** for each kind of plan in a registry. When a new horse arrives, the template is **cloned** and only the data that changes is customized (name, weight, extras...). The template is never modified.
+
+```java
+CarePlanRegistry registry = new CarePlanRegistry();
+
+HorseCarePlan thunder = registry.createPlan("RACEHORSE"); // clone, not new
+thunder.setHorseName("Thunder");
+thunder.setWeightKg(510);
+thunder.removeExtra(PlanExtra.TRAINING);
+```
+
+### Roles
+
+| Pattern role | Class | Class example |
+|---|---|---|
+| Prototype (interface) | `CarePlanPrototype` | `Shape` |
+| Abstract prototype | `HorseCarePlan` | — |
+| Concrete prototypes | `RacehorseCarePlan`, `SeniorHorseCarePlan`, `FoalCarePlan` | `Circle` |
+| Prototype registry | `CarePlanRegistry` | — |
+| Client | `CarePlanController`, `PrototypeDemo` | `Main` |
+
+```mermaid
+classDiagram
+    class CarePlanPrototype {
+        <<interface>>
+        +clone() CarePlanPrototype
+    }
+    class HorseCarePlan {
+        <<abstract>>
+        -String horseName
+        -int ageYears
+        -double weightKg
+        -List~String~ feedingSchedule
+        -List~String~ vaccinations
+        -EnumSet~PlanExtra~ extras
+        +clone() HorseCarePlan
+        +toHorseService() HorseService
+        +getPrice() double
+    }
+    class RacehorseCarePlan {
+        -int weeklyGallops
+        +clone() RacehorseCarePlan
+    }
+    class SeniorHorseCarePlan {
+        -String jointSupplement
+        +clone() SeniorHorseCarePlan
+    }
+    class FoalCarePlan {
+        -boolean nursing
+        +clone() FoalCarePlan
+    }
+    class CarePlanRegistry {
+        -Map~String, HorseCarePlan~ templates
+        +register(String, HorseCarePlan)
+        +createPlan(String) HorseCarePlan
+    }
+    class PlanExtra {
+        <<enumeration>>
+        PREMIUM_FOOD
+        BATH
+        TRAINING
+        VETERINARY
+        +applyTo(HorseService) HorseService
+    }
+
+    CarePlanPrototype <|.. HorseCarePlan
+    HorseCarePlan <|-- RacehorseCarePlan
+    HorseCarePlan <|-- SeniorHorseCarePlan
+    HorseCarePlan <|-- FoalCarePlan
+    CarePlanRegistry o--> HorseCarePlan : templates
+    HorseCarePlan --> PlanExtra
+```
+
+### Deep copy
+
+Each concrete plan clones itself through a **copy constructor** (`return new RacehorseCarePlan(this);`), like `Circle` in the class example. The lists of feeding and vaccinations and the set of extras are **copied**, not shared. If they were shared, adding a vaccine to one horse would add it to the template and to every other horse cloned from it.
+
+### Connection with the Decorator pattern
+
+`PlanExtra` knows which existing decorator wraps the basic service. `HorseCarePlan.toHorseService()` starts with `BasicHorseCare` and wraps it with the decorators of its extras, so the price of a cloned plan is calculated by the same Decorator chain of the project.
+
+### Files
+
+| File | Package |
+|---|---|
+| `CarePlanPrototype.java` | `com.horsecare.prototype` |
+| `PlanExtra.java` | `com.horsecare.prototype` |
+| `HorseCarePlan.java` | `com.horsecare.prototype` |
+| `RacehorseCarePlan.java`, `SeniorHorseCarePlan.java`, `FoalCarePlan.java` | `com.horsecare.prototype` |
+| `CarePlanRegistry.java` | `com.horsecare.prototype` |
+| `PrototypeDemo.java` | `com.horsecare.prototype` (console demo) |
+| `CarePlanController.java` | `com.horsecare.controller` |
+| `prototype.html`, `prototype.css`, `prototype.js` | frontend (`static/`) |
+
+### REST API
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/api/plans/templates` | Templates available in the registry |
+| POST | `/api/plans/clone` | Clones a template and customizes the copy |
+
+Example request:
+
+```json
+{
+  "templateKey": "SENIOR",
+  "horseName": "Luna",
+  "ageYears": 25,
+  "weightKg": 430,
+  "extras": ["BATH", "TRAINING"]
+}
+```
+
+The response returns the **cloned plan** and the **original template** side by side, to show that the template did not change. The page `prototype.html` shows this comparison.
+
+### Console demo output (`PrototypeDemo`)
+
+```
+Clone 1 : Racehorse care plan for Thunder (4 years, 510.0 kg) | extras: [PREMIUM_FOOD, TRAINING, VETERINARY] | price: $200,000
+Clone 2 : Racehorse care plan for Storm (4 years, 480.0 kg) | extras: [PREMIUM_FOOD, BATH, VETERINARY] | price: $170,000
+Template: Racehorse care plan for Unassigned (4 years, 480.0 kg) | extras: [PREMIUM_FOOD, TRAINING, VETERINARY] | price: $200,000
+Template vaccinations: [Tetanus, Equine influenza, Equine herpesvirus]
+Storm vaccinations   : [Tetanus, Equine influenza, Equine herpesvirus, West Nile virus]
+Same object? false
+Same data?   true
+```
+
+### OOP principles
+
+| Principle | Where |
+|---|---|
+| Abstraction | `CarePlanPrototype` and the abstract class `HorseCarePlan` |
+| Encapsulation | Private attributes, validated setters, lists returned as read-only views |
+| Inheritance | The three concrete plans extend `HorseCarePlan` |
+| Polymorphism | `CarePlanRegistry` calls `clone()` without knowing the concrete class |
+
+### Advantages and disadvantages observed
+
+- ✅ New plans are created from a ready template, changing only what is different.
+- ✅ The registry can receive new templates at runtime with `register()`.
+- ⚠️ Cloning must copy the lists one by one (deep copy); a shallow copy would mix the data of different horses.
+- ⚠️ Every new subclass must remember to implement its own `clone()` and copy its own attributes.
