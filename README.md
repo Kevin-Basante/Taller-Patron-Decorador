@@ -1,72 +1,128 @@
 # 🐎 HorseCare
 
-HorseCare is a small web application created as a practical example of the **Decorator Design Pattern** using **Java and Spring Boot**.
+HorseCare is a web application built with **Java and Spring Boot** that creates care plans for horses. It combines three design patterns:
 
-The application represents a real-world equestrian care scenario: a basic horse-care service can be dynamically extended with additional services such as premium food, bathing, training and veterinary check-ups.
+| Pattern | Type | What it does in HorseCare |
+|---|---|---|
+| **Decorator** | Structural | Adds optional services (premium food, bath, training, veterinary check) on top of a base care. |
+| **Factory Method** | Creational | Creates the right **base care** for each horse type (leisure, sport, foal, senior). |
+| **Builder** | Creational | Assembles the complete **care plan** (profile, base care, extras, schedule and recommendations) step by step, with a Director. |
+
+> **Credits.** The original project (Decorator pattern) was created by another team of the course. As part of the project exchange of the *Software Patterns* course, **Kevin Basante** and **Arley Riascos** added the **Factory Method** and **Builder** patterns, reorganized the project into a standard Maven structure, and deployed it to the cloud.
 
 ---
 
-## 🎯 Purpose
-
-The main purpose of this project is to demonstrate how the Decorator pattern allows additional responsibilities to be added to an object dynamically without modifying its original class.
-
-Instead of creating a separate class for every possible combination of services, HorseCare wraps the base service with different decorators.
-
-Example:
+## 🔄 How the three patterns work together
 
 ```text
-BasicHorseCare
-      ↓
-PremiumFoodDecorator
-      ↓
-BathDecorator
-      ↓
-TrainingDecorator
+ Customer request: "Thunder", sport horse, Competition package
+        │
+        ▼
+ CarePlanService ──► chooses SportHorseCareCreator      (Factory Method)
+        │        ──► chooses CompetitionCarePlanBuilder (Builder)
+        ▼
+ CarePlanDirector.buildCarePlan()
+        ├── buildHorseProfile()     name, type, package
+        ├── buildBaseCare()         creator.createCare()  ──► SportHorseCare
+        ├── buildExtraServices()    new PremiumFoodDecorator(...)
+        │                           new TrainingDecorator(...)          (Decorator)
+        │                           new VeterinaryDecorator(...)
+        ├── buildSchedule()         5 sessions per week
+        └── buildRecommendations()
+        ▼
+ CarePlan  ──►  JSON  ──►  frontend
 ```
 
----
-
-## 🧩 Decorator Pattern
-
-The project contains the following roles:
-
-### Component
-
-`HorseService`
-
-Defines the common operations:
-
-- `getDescription()`
-- `getPrice()`
-
-### Concrete Component
-
-`BasicHorseCare`
-
-Represents the original/base service.
-
-### Base Decorator
-
-`HorseServiceDecorator`
-
-Keeps a reference to another `HorseService` and delegates its behavior.
-
-### Concrete Decorators
-
-- `PremiumFoodDecorator`
-- `BathDecorator`
-- `TrainingDecorator`
-- `VeterinaryDecorator`
-
-Each decorator adds its own description and price.
+The frontend shows this chain in the **"¿Cómo se construyó este plan?"** panel for every plan it creates.
 
 ---
 
-## 💰 Service prices
+## 🧩 Decorator pattern (original project)
 
-| Service | Price |
+| Role | Class |
+|---|---|
+| Component | `HorseService` |
+| Concrete components | `BasicHorseCare`, `SportHorseCare`, `FoalCare`, `SeniorHorseCare` |
+| Base decorator | `HorseServiceDecorator` |
+| Concrete decorators | `PremiumFoodDecorator`, `BathDecorator`, `TrainingDecorator`, `VeterinaryDecorator` |
+
+Each decorator wraps another `HorseService` and adds its own description and price.
+
+---
+
+## 🏭 Factory Method pattern (added)
+
+**Problem:** every kind of horse needs a different base care. If the code that builds the plan used `new SportHorseCare()` directly, adding a new horse type would mean changing that code.
+
+**Solution:** an abstract creator declares the factory method and each subclass decides which product to create.
+
+| Role | Class |
+|---|---|
+| Product | `HorseService` |
+| Concrete products | `BasicHorseCare`, `SportHorseCare`, `FoalCare`, `SeniorHorseCare` |
+| Creator | `HorseCareCreator` (abstract method `createCare()`) |
+| Concrete creators | `LeisureHorseCareCreator`, `SportHorseCareCreator`, `FoalCareCreator`, `SeniorHorseCareCreator` |
+
+```java
+public abstract class HorseCareCreator {
+    public abstract HorseService createCare();   // factory method
+}
+
+public class SportHorseCareCreator extends HorseCareCreator {
+    @Override
+    public HorseService createCare() {
+        return new SportHorseCare();
+    }
+}
+```
+
+The builders only know the abstract `HorseCareCreator`, never the concrete classes.
+
+---
+
+## 🧱 Builder pattern (added)
+
+**Problem:** a care plan is a complex object with many parts (profile, base care, extra services, weekly sessions, recommendations), and each package fills those parts differently.
+
+**Solution:** a builder interface with one method per step, one concrete builder per package, and a director that runs the steps in order.
+
+| Role | Class |
+|---|---|
+| Product | `CarePlan` |
+| Builder | `CarePlanBuilder` (interface) and `AbstractCarePlanBuilder` (shared steps) |
+| Concrete builders | `CustomCarePlanBuilder`, `CompetitionCarePlanBuilder`, `WellnessCarePlanBuilder`, `HealthCheckCarePlanBuilder` |
+| Director | `CarePlanDirector` |
+
+```java
+CarePlanBuilder builder = new CompetitionCarePlanBuilder("Thunder", HorseType.SPORT, new SportHorseCareCreator());
+CarePlanDirector director = new CarePlanDirector(builder);
+
+director.buildCarePlan();
+CarePlan plan = builder.getCarePlan();
+```
+
+### Packages
+
+| Package | Builder | Extra services | Sessions/week |
+|---|---|---|---:|
+| Personalizado | `CustomCarePlanBuilder` | The ones the customer selects | 3 |
+| Competencia | `CompetitionCarePlanBuilder` | Premium food, training, veterinary check | 5 |
+| Bienestar | `WellnessCarePlanBuilder` | Premium food, bath | 2 |
+| Control de salud | `HealthCheckCarePlanBuilder` | Bath, veterinary check | 1 |
+
+---
+
+## 💰 Prices
+
+| Base care (Factory Method) | Price |
 |---|---:|
-| Basic horse care | $80.000 |
+| Caballo de paseo — `BasicHorseCare` | $80.000 |
+| Caballo deportivo — `SportHorseCare` | $110.000 |
+| Potro — `FoalCare` | $95.000 |
+| Caballo mayor — `SeniorHorseCare` | $100.000 |
+
+| Extra service (Decorator) | Price |
+|---|---:|
 | Premium food | +$30.000 |
 | Bath and grooming | +$20.000 |
 | Training | +$50.000 |
@@ -76,95 +132,73 @@ Prices are examples created for the academic demonstration.
 
 ---
 
-## 🛠️ Technologies
-
-- Java 21
-- Spring Boot 3.5.6
-- Maven
-- HTML5
-- CSS3
-- JavaScript
-- REST API
-
-No database is required.
-
----
-
 ## 📁 Project structure
 
 ```text
-HorseCare/
-│
-├── src/
-│   └── main/
-│       ├── java/
-│       │   └── com/horsecare/
-│       │       ├── HorseCareApplication.java
-│       │       ├── controller/
-│       │       │   └── HorseController.java
-│       │       ├── model/
-│       │       │   ├── HorseService.java
-│       │       │   └── BasicHorseCare.java
-│       │       └── decorator/
-│       │           ├── HorseServiceDecorator.java
-│       │           ├── PremiumFoodDecorator.java
-│       │           ├── BathDecorator.java
-│       │           ├── TrainingDecorator.java
-│       │           └── VeterinaryDecorator.java
-│       │
-│       └── resources/
-│           └── static/
-│               ├── index.html
-│               ├── style.css
-│               └── script.js
-│
+├── Dockerfile
 ├── pom.xml
-└── README.md
+├── README.md
+└── src/main/
+    ├── java/com/horsecare/
+    │   ├── HorseCareApplication.java
+    │   ├── controller/
+    │   │   └── HorseController.java            REST API
+    │   ├── service/
+    │   │   └── CarePlanService.java            client of the three patterns
+    │   ├── model/                              Decorator component + Factory Method products
+    │   │   ├── HorseService.java
+    │   │   ├── HorseType.java
+    │   │   ├── BasicHorseCare.java
+    │   │   ├── SportHorseCare.java
+    │   │   ├── FoalCare.java
+    │   │   └── SeniorHorseCare.java
+    │   ├── decorator/                          Decorator
+    │   │   ├── HorseServiceDecorator.java
+    │   │   ├── PremiumFoodDecorator.java
+    │   │   ├── BathDecorator.java
+    │   │   ├── TrainingDecorator.java
+    │   │   └── VeterinaryDecorator.java
+    │   ├── factory/                            Factory Method
+    │   │   ├── HorseCareCreator.java
+    │   │   ├── LeisureHorseCareCreator.java
+    │   │   ├── SportHorseCareCreator.java
+    │   │   ├── FoalCareCreator.java
+    │   │   └── SeniorHorseCareCreator.java
+    │   └── builder/                            Builder
+    │       ├── CarePlan.java
+    │       ├── CarePlanBuilder.java
+    │       ├── AbstractCarePlanBuilder.java
+    │       ├── CustomCarePlanBuilder.java
+    │       ├── CompetitionCarePlanBuilder.java
+    │       ├── WellnessCarePlanBuilder.java
+    │       ├── HealthCheckCarePlanBuilder.java
+    │       ├── CarePlanDirector.java
+    │       ├── CarePackage.java
+    │       └── ExtraServiceSelection.java
+    └── resources/
+        ├── application.properties
+        └── static/
+            ├── index.html
+            ├── style.css
+            └── script.js
 ```
 
 ---
 
-## ▶️ How to run
+## ▶️ How to run locally
 
-### Requirements
-
-Install:
-
-- Java 21 or compatible JDK
-- Maven 3.9+ (optional if using the Maven Wrapper or an IDE with Maven support)
-- IntelliJ IDEA, Eclipse or Visual Studio Code can be used as the IDE.
-
-Verify Java:
-
-```bash
-java -version
-```
-
-The project was configured for Java 21.
-
-### Run with Maven
-
-Open a terminal inside the `HorseCare` folder and execute:
+Requirements: **Java 21** and **Maven 3.9+** (or an IDE with Maven support, such as IntelliJ IDEA).
 
 ```bash
 mvn spring-boot:run
 ```
 
-Then open:
+Then open http://localhost:8080.
 
-```text
-http://localhost:8080
-```
-
-### Build the project
+To build and run the jar:
 
 ```bash
 mvn clean package
-```
-
-Run the generated JAR:
-
-```bash
 java -jar target/horsecare-1.0.0.jar
 ```
 
@@ -172,112 +206,61 @@ java -jar target/horsecare-1.0.0.jar
 
 ## 🔌 REST API
 
-The frontend communicates with the backend through:
-
-```text
-POST /api/services/calculate
-```
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/options` | Horse types and care packages for the selects |
+| POST | `/api/care-plans` | Builds a care plan |
 
 Example request:
 
 ```json
 {
+  "horseName": "Thunder",
+  "horseType": "SPORT",
+  "carePackage": "CUSTOM",
   "premiumFood": true,
-  "bath": true,
-  "training": false,
-  "veterinary": true
+  "bath": false,
+  "training": true,
+  "veterinary": false
 }
 ```
 
-The backend creates the service dynamically:
+Example response:
 
-```java
-HorseService service = new BasicHorseCare();
-
-if (request.premiumFood()) {
-    service = new PremiumFoodDecorator(service);
-}
-
-if (request.bath()) {
-    service = new BathDecorator(service);
-}
-
-if (request.training()) {
-    service = new TrainingDecorator(service);
-}
-
-if (request.veterinary()) {
-    service = new VeterinaryDecorator(service);
+```json
+{
+  "horseName": "Thunder",
+  "horseType": "Caballo deportivo",
+  "carePackage": "Personalizado",
+  "description": "Cuidado deportivo (ejercicio diario y control de cascos) + Alimentación premium + Entrenamiento",
+  "price": 190000.0,
+  "weeklySessions": 3,
+  "recommendations": ["Revisar el plan con el cuidador cada mes."],
+  "creator": "SportHorseCareCreator",
+  "baseCare": "SportHorseCare",
+  "builder": "CustomCarePlanBuilder",
+  "decorators": ["PremiumFoodDecorator", "TrainingDecorator"]
 }
 ```
 
-The final object contains all selected decorators.
+Invalid requests (empty name, unknown horse type, etc.) return **HTTP 400** with `{"error": "..."}`.
 
 ---
 
-## ☁️ Deployment
+## ☁️ Deployment (Render)
 
-The project is designed to be deployable to a cloud platform that supports Java/Spring Boot applications.
+The project includes a multi-stage `Dockerfile`, and `application.properties` reads the port assigned by the platform (`server.port=${PORT:8080}`).
 
-For deployment, the application listens on the platform-provided `PORT` only if the platform is configured to provide one. For a production deployment, the Spring server port can be configured with:
+1. Sign in at https://render.com with GitHub.
+2. **New → Web Service** → select this repository.
+3. Render detects the `Dockerfile`. Choose the **Free** plan and create the service.
+4. When the build finishes, Render gives a public URL like `https://horsecare.onrender.com`.
 
-```text
-server.port=${PORT:8080}
-```
-
-This can be added to:
-
-```text
-src/main/resources/application.properties
-```
-
-The project currently uses port `8080` locally.
+On the free plan the service sleeps after 15 minutes without traffic; the next visit takes about a minute to wake it up.
 
 ---
 
-## 📚 Academic explanation
+## 👥 Authors
 
-### Problem
-
-A horse-care center may offer a basic service and several optional services. The combinations can grow quickly.
-
-For example:
-
-```text
-Basic
-Basic + Food
-Basic + Bath
-Basic + Food + Bath
-Basic + Food + Training
-Basic + Food + Bath + Training
-...
-```
-
-Creating a class for every possible combination would make the system difficult to maintain.
-
-### Solution
-
-The Decorator pattern allows each optional service to wrap another service.
-
-```text
-HorseService
-    ↑
-BasicHorseCare
-
-HorseServiceDecorator
-    ↑
-    ├── PremiumFoodDecorator
-    ├── BathDecorator
-    ├── TrainingDecorator
-    └── VeterinaryDecorator
-```
-
-This makes the system flexible and allows combinations to be created at runtime.
-
----
-
-## 👨‍💻 Author
-
-Academic project — Software Engineering.
-
-HorseCare was created as a practical implementation of the **Decorator Design Pattern** using Java and Spring Boot.
+- **Original project (Decorator):** course team that created HorseCare.
+- **Factory Method, Builder and deployment:** Kevin Basante and Arley Riascos.
